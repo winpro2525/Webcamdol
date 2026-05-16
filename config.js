@@ -1,20 +1,11 @@
 // ============================================================
 // EpicTalk - Supabase Configuration & Global State
 // ============================================================
-// 🔧 Replace with your actual Supabase project credentials
-// 📍 Find them: https://app.supabase.com → Project Settings → API
+// 📍 Project Settings: https://app.supabase.com → Project Settings → API
 // ============================================================
 
-const SUPABASE_URL    = https://gqwlqzmfdllhciblctwz.supabase.co/rest/v1/;      // e.g. https://abcxyz.supabase.co
-const SUPABASE_ANON_KEY = 
-
-
-
-
-
-
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxd2xxem1mZGxsaGNpYmxjdHd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjUwNDksImV4cCI6MjA5NDUwMTA0OX0.bVWjyu37TqLuJLx938M3aAUvQnvxcPB6UXOx__3q0PQ; // starts with eyJ...
+const SUPABASE_URL     = 'https://gqwlqzmfdllhciblctwz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxd2xxem1mZGxsaGNpYmxjdHd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjUwNDksImV4cCI6MjA5NDUwMTA0OX0.bVWjyu37TqLuJLx938M3aAUvQnvxcPB6UXOx__3q0PQ';
 
 // Create Supabase client
 const { createClient } = supabase;
@@ -209,4 +200,3 @@ const UI = {
             </div>`;
   }
 };
-
