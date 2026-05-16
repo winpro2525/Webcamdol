@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EpicTalk | التطبيق</title>
+  <style>
+    /* ── RESET & VARIABLES ── */
+    :root{
+      --bg:#070b16; --bg2:#0e1430;
+      --panel:rgba(255,255,255,.07); --panel2:rgba(255,255,255,.1);
+      --border:rgba(255,255,255,.12);
+      --text:#f6f8ff; --muted:#a8b1d1;
+      --primary:#7c5cff; --secondary:#24d3ee; --accent:#ff4fd8;
+      --success:#30d28c; --danger:#ff5c70; --warning:#ffca5c;
+      --sidebar-w:300px; --right-panel-w:320px;
+      --radius:24px; --radius-sm:14px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
+    body{
+      font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(124,92,255,.22), transparent 24%),
+        radial-gradient(circle at 90% 15%, rgba(36,211,238,.16), transparent 20%),
+        radial-gradient(circle at 50% 95%, rgba(255,79,216,.14), transparent 26%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+    }
+
+    /* ── GLASS ── */
+    .glass{
+      background:var(--panel);
+      border:1px solid var(--border);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+    }
+
+    /* ── APP LAYOUT ── */
+    .app-layout{
+      display:grid;
+      grid-template-columns:var(--sidebar-w) 1fr var(--right-panel-w);
+      grid-template-rows:100vh;
+      height:100vh;
+      gap:12px;
+      padding:12px;
+    }
+
+    /* ══════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════ */
+    .sidebar{
+      border-radius:var(--radius);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:14px;
+      overflow:hidden;
+    }
+
+    /* User mini card */
+    #user-mini{}
+
+    /* Search bar */
+    .sidebar-search-wrap{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.09);
+      border-radius:14px;padding:10px 12px;
+    }
+    .sidebar-search-wrap input{
+      flex:1;border:none;outline:none;background:transparent;
+      color:var(--text);font-size:.88rem;
+    }
+    .sidebar-search-wrap input::placeholder{color:#6b75a0}
+
+    /* Nav tabs */
+    .nav-tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:12px;padding:4px}
+    .nav-tab{
+      flex:1;padding:8px 4px;border:none;border-radius:9px;cursor:pointer;
+      font-size:.78rem;font-weight:600;color:var(--muted);background:transparent;transition:.2s;
+    }
+    .nav-tab.active{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff}
+
+    /* Conversations list */
+    .conversations-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+    .conversations-list::-webkit-scrollbar{width:4px}
+    .conversations-list::-webkit-scrollbar-track{background:transparent}
+    .conversations-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+
+    .conv-item{
+      display:flex;align-items:center;gap:10px;
+      padding:11px 12px;border-radius:16px;cursor:pointer;
+      border:1px solid transparent;transition:.18s;
+    }
+    .conv-item:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.07)}
+    .conv-item.active{
+      background:linear-gradient(135deg, rgba(124,92,255,.22), rgba(36,211,238,.12));
+      border-color:rgba(255,255,255,.12);
+    }
+
+    /* Sidebar bottom actions */
+    .sidebar-actions{
+      display:flex;gap:8px;
+      padding:8px 4px 0;
+      border-top:1px solid rgba(255,255,255,.07);
+    }
+    .sidebar-action-btn{
+      flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+      padding:11px 8px;border:1px solid rgba(255,255,255,.1);border-radius:12px;
+      background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;
+      font-size:.8rem;font-weight:600;transition:.2s;position:relative;
+    }
+    .sidebar-action-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.15)}
+
+    /* ══════════════════════════════════════
+       MAIN AREA
+    ══════════════════════════════════════ */
+    .main-area{
+      border-radius:var(--radius);
+      display:flex;flex-direction:column;
+      overflow:hidden;min-width:0;
+    }
+
+    /* Empty state */
+    #empty-state{
+      flex:1;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:16px;
+      color:var(--muted);
+    }
+    #empty-state .empty-icon{font-size:5rem;animation:float 4s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    #empty-state h2{font-size:1.5rem;color:var(--text)}
+    #empty-state p{font-size:.95rem;text-align:center;max-width:320px;line-height:1.7}
+
+    /* Chat view */
+    #chat-view{flex:1;display:none;flex-direction:column;min-width:0;min-height:0}
+
+    /* Chat header */
+    .chat-header{
+      padding:14px 18px;border-radius:0;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      flex-shrink:0;
+    }
+    #chat-header-content{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+    /* Messages container */
+    #messages-container{
+      flex:1;overflow-y:auto;
+      padding:16px 18px;
+      display:flex;flex-direction:column;gap:6px;
+      min-height:0;
+    }
+    #messages-container::-webkit-scrollbar{width:5px}
+    #messages-container::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:5px}
+
+    /* Messages */
+    .msg-row{display:flex;align-items:flex-end;gap:0;margin-bottom:2px}
+    .msg-row.own{flex-direction:row-reverse}
+
+    .msg-bubble{
+      padding:12px 15px;border-radius:18px;
+      max-width:72%;word-break:break-word;
+      font-size:.93rem;line-height:1.65;
+      animation:msgIn .3s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes msgIn{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+    .msg-own{
+      background:linear-gradient(135deg, rgba(124,92,255,.3), rgba(36,211,238,.2));
+      border:1px solid rgba(255,255,255,.12);
+      border-bottom-right-radius:6px;
+    }
+    .msg-other{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      border-bottom-left-radius:6px;
+    }
+    .msg-meta{
+      display:flex;justify-content:flex-end;gap:6px;
+      margin-top:6px;color:rgba(255,255,255,.4);font-size:.73rem;
+    }
+    .msg-status{color:var(--secondary)}
+    .msg-bubble a{color:var(--secondary)}
+
+    .date-divider{
+      display:flex;align-items:center;gap:10px;
+      color:rgba(255,255,255,.3);font-size:.78rem;margin:8px 0;
+    }
+    .date-divider::before,.date-divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.07)}
+    .date-divider span{white-space:nowrap;background:transparent;padding:0 4px}
+
+    /* Typing indicator */
+    .typing-indicator{
+      display:none;align-items:center;gap:8px;padding:8px 14px;
+      color:var(--muted);font-size:.83rem;
+    }
+    .typing-dots span{
+      display:inline-block;width:6px;height:6px;border-radius:50%;
+      background:var(--muted);animation:typingBounce 1.2s infinite;
+      margin:0 1px;
+    }
+    .typing-dots span:nth-child(2){animation-delay:.2s}
+    .typing-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+    /* Input bar */
+    .input-bar{
+      padding:12px 14px;
+      border-top:1px solid rgba(255,255,255,.06);
+      display:flex;align-items:center;gap:8px;flex-shrink:0;
+    }
+    .input-bar .icon-btn{
+      width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:1.1rem;
+      transition:.2s;flex-shrink:0;
+    }
+    .input-bar .icon-btn:hover{background:rgba(255,255,255,.12)}
+    #msg-input{
+      flex:1;padding:11px 14px;background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.1);border-radius:14px;
+      color:var(--text);font-size:.93rem;outline:none;resize:none;
+      font-family:inherit;transition:.2s;max-height:120px;
+    }
+    #msg-input:focus{border-color:var(--primary);background:rgba(124,92,255,.08)}
+    #msg-input::placeholder{color:#6b75a0}
+    #btn-send{
+      padding:11px 18px;border:none;border-radius:14px;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff;font-weight:700;cursor:pointer;font-size:.9rem;
+      transition:.2s;flex-shrink:0;
+    }
+    #btn-send:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,92,255,.35)}
+
+    /* ══════════════════════════════════════
+       RIGHT PANEL
+    ══════════════════════════════════════ */
+    #right-panel{
+      border-radius:var(--radius);
+      overflow-y:auto;
+      transition:.3s;
+    }
+    #right-panel::-webkit-scrollbar{width:4px}
+    #right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+    #right-panel:not(.visible){opacity:.4;pointer-events:none}
+    #right-panel.visible{opacity:1;pointer-events:auto}
+
+    /* ══════════════════════════════════════
+       SHARED COMPONENT STYLES
+    ══════════════════════════════════════ */
+    .icon-btn{
+      width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:1rem;
+      transition:.2s;display:grid;place-items:center;
+    }
+    .icon-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18)}
+
+    .count{
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:.75rem;color:#fff;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      padding:2px 7px;border-radius:999px;min-width:20px;
+    }
+
+    .avatar{display:grid;place-items:center;flex-shrink:0}
+
+    .presence-dot{
+      display:inline-block;width:10px;height:10px;border-radius:50%;
+      border:2px solid var(--bg2);flex-shrink:0;
+    }
+    .status-online{background:var(--success);box-shadow:0 0 0 3px rgba(48,210,140,.2)}
+    .status-away{background:var(--warning)}
+    .status-busy{background:var(--danger)}
+    .status-offline{background:rgba(255,255,255,.2)}
+
+    .spinner{
+      display:inline-block;width:20px;height:20px;
+      border:2px solid rgba(255,255,255,.15);border-top-color:var(--primary);
+      border-radius:50%;animation:spin .7s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .action-btn{
+      padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;
+      font-size:.88rem;font-weight:600;width:100%;text-align:right;transition:.2s;
+    }
+    .action-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.16)}
+    .action-btn.danger{border-color:rgba(255,92,112,.3);color:var(--danger)}
+    .action-btn.danger:hover{background:rgba(255,92,112,.1)}
+
+    /* ══════════════════════════════════════
+       MODALS
+    ══════════════════════════════════════ */
+    .modal{
+      display:none;position:fixed;inset:0;z-index:500;
+      background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+      align-items:center;justify-content:center;padding:20px;
+    }
+    .modal.open .modal-box{transform:translateY(0) scale(1);opacity:1}
+    .modal-box{
+      width:100%;max-width:480px;
+      background:rgba(14,20,48,.92);
+      border:1px solid var(--border);border-radius:28px;
+      padding:28px 24px;
+      box-shadow:0 30px 80px rgba(0,0,0,.5);
+      transform:translateY(16px) scale(.97);opacity:0;
+      transition:.28s cubic-bezier(.34,1.56,.64,1);
+      max-height:90vh;overflow-y:auto;
+    }
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .modal-header h2{font-size:1.15rem;font-weight:700}
+    .modal-close{
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+      border-radius:10px;width:34px;height:34px;cursor:pointer;color:var(--muted);
+      font-size:1.1rem;display:grid;place-items:center;transition:.2s;
+    }
+    .modal-close:hover{background:rgba(255,255,255,.14);color:var(--text)}
+
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:.83rem;color:var(--muted);margin-bottom:6px;font-weight:500}
+    .form-group input,.form-group textarea,.form-group select{
+      width:100%;padding:11px 13px;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.1);border-radius:12px;
+      color:var(--text);font-size:.9rem;outline:none;transition:.2s;font-family:inherit;
+    }
+    .form-group input:focus,.form-group textarea:focus{border-color:var(--primary);background:rgba(124,92,255,.08)}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .btn-primary-sm{
+      padding:11px 18px;border:none;border-radius:12px;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff;font-weight:700;cursor:pointer;font-size:.9rem;transition:.2s;
+    }
+    .btn-primary-sm:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,255,.35)}
+    .btn-primary-sm:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+    /* Search results */
+    .search-result-item{
+      display:flex;align-items:center;gap:12px;padding:10px 12px;
+      border-radius:12px;cursor:pointer;transition:.18s;
+    }
+    .search-result-item:hover{background:rgba(255,255,255,.07)}
+
+    /* Notification item */
+    .notif-item{
+      display:flex;align-items:flex-start;gap:12px;padding:12px;
+      border-radius:14px;cursor:pointer;transition:.18s;border-bottom:1px solid rgba(255,255,255,.05);
+    }
+    .notif-item:hover{background:rgba(255,255,255,.05)}
+    .notif-item.unread{background:rgba(124,92,255,.08)}
+    .notif-icon{font-size:1.4rem;flex-shrink:0}
+    .notif-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:4px}
+
+    /* ══════════════════════════════════════
+       VIDEO CALL OVERLAY
+    ══════════════════════════════════════ */
+    #video-overlay{
+      position:fixed;inset:0;z-index:800;
+      background:rgba(7,11,22,.95);backdrop-filter:blur(20px);
+      display:none;flex-direction:column;
+      align-items:center;justify-content:center;gap:0;
+    }
+
+    #video-main{
+      position:relative;width:100%;flex:1;
+      display:flex;align-items:center;justify-content:center;
+      background:#000;overflow:hidden;
+    }
+    #remote-video{
+      width:100%;height:100%;object-fit:cover;display:none;
+    }
+    #local-video{
+      position:absolute;bottom:16px;right:16px;
+      width:160px;height:110px;object-fit:cover;
+      border-radius:14px;border:2px solid rgba(255,255,255,.2);
+      box-shadow:0 8px 24px rgba(0,0,0,.5);
+      transform:scaleX(-1); /* Mirror effect */
+      z-index:2;
+    }
+    #calling-indicator{
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      gap:16px;color:var(--text);
+    }
+    .calling-pulse{
+      width:80px;height:80px;border-radius:50%;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      display:grid;place-items:center;font-size:2rem;
+      animation:pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,255,.6)}70%{box-shadow:0 0 0 20px rgba(124,92,255,0)}}
+
+    #call-info-bar{
+      width:100%;display:flex;align-items:center;justify-content:space-between;
+      padding:14px 20px;
+      background:rgba(7,11,22,.7);
+    }
+    #call-timer{font-size:1.1rem;font-weight:700;color:var(--success);font-variant-numeric:tabular-nums}
+    #call-status-text{color:var(--muted);font-size:.9rem}
+
+    #call-controls{
+      width:100%;display:flex;justify-content:center;align-items:center;
+      gap:12px;padding:18px 20px;
+      background:rgba(7,11,22,.8);
+    }
+    .call-ctrl{
+      width:56px;height:56px;border-radius:18px;border:none;cursor:pointer;
+      color:#fff;font-size:1.3rem;transition:.2s;
+      display:grid;place-items:center;
+    }
+    .call-ctrl-default{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15)}
+    .call-ctrl-default:hover{background:rgba(255,255,255,.2)}
+    .call-ctrl.control-off{background:rgba(255,255,255,.06);opacity:.6}
+    .call-ctrl.control-on{background:rgba(124,92,255,.4);border-color:var(--primary)}
+    .call-ctrl-end{background:linear-gradient(135deg,var(--danger),#ff8a5c);
+                   box-shadow:0 6px 20px rgba(255,92,112,.4);width:64px;height:64px}
+    .call-ctrl-end:hover{transform:scale(1.06)}
+
+    /* ══════════════════════════════════════
+       INCOMING CALL MODAL
+    ══════════════════════════════════════ */
+    #modal-incoming-call .modal-box{max-width:360px;text-align:center;padding:36px 28px}
+    #caller-avatar{display:flex;justify-content:center;margin-bottom:14px}
+    #caller-name{font-size:1.4rem;font-weight:800;margin-bottom:6px}
+    #call-type-label{color:var(--muted);font-size:.93rem;margin-bottom:28px}
+    .call-answer-btns{display:flex;gap:16px;justify-content:center}
+    .btn-accept{
+      width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;
+      background:linear-gradient(135deg,var(--success),#1dbf87);
+      font-size:1.5rem;transition:.2s;
+      box-shadow:0 8px 24px rgba(48,210,140,.4);
+    }
+    .btn-decline{
+      width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;
+      background:linear-gradient(135deg,var(--danger),#ff8a5c);
+      font-size:1.5rem;transition:.2s;
+      box-shadow:0 8px 24px rgba(255,92,112,.4);
+    }
+    .btn-accept:hover,.btn-decline:hover{transform:scale(1.08)}
+
+    /* ══════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════ */
+    #toast-container{
+      position:fixed;top:18px;left:50%;transform:translateX(-50%);
+      z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center;
+      pointer-events:none;
+    }
+    .toast{
+      padding:12px 18px;background:rgba(14,20,48,.95);
+      border:1px solid rgba(255,255,255,.1);border-left:4px solid var(--primary);
+      border-radius:12px;color:#f6f8ff;font-size:.88rem;
+      display:flex;align-items:center;gap:8px;
+      backdrop-filter:blur(20px);box-shadow:0 8px 28px rgba(0,0,0,.4);
+      opacity:0;transform:translateY(-8px);transition:.3s;
+      max-width:320px;pointer-events:auto;
+    }
+    .toast.show{opacity:1;transform:translateY(0)}
+
+    /* ══════════════════════════════════════
+       CONTEXT MENU
+    ══════════════════════════════════════ */
+    .context-menu{
+      background:rgba(14,20,48,.96);border:1px solid var(--border);
+      border-radius:14px;overflow:hidden;min-width:150px;
+      box-shadow:0 12px 40px rgba(0,0,0,.5);
+    }
+    .context-menu button{
+      display:block;width:100%;padding:11px 14px;text-align:right;
+      background:none;border:none;color:var(--text);cursor:pointer;
+      font-size:.88rem;transition:.15s;
+    }
+    .context-menu button:hover{background:rgba(255,255,255,.08)}
+
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media(max-width:1100px){
+      .app-layout{grid-template-columns:var(--sidebar-w) 1fr;grid-template-rows:100vh}
+      #right-panel{display:none}
+    }
+    @media(max-width:760px){
+      .app-layout{grid-template-columns:1fr}
+      .sidebar{display:none}
+      #mobile-header{display:flex!important}
+    }
+    #mobile-header{
+      display:none;align-items:center;justify-content:space-between;
+      padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);
+    }
+    #mobile-menu-btn{background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer}
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     APP LAYOUT
+══════════════════════════════════ -->
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar glass">
+    <!-- User profile mini -->
+    <div id="user-mini">
+      <div style="padding:14px 12px;text-align:center;color:var(--muted)">
+        <span class="spinner"></span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="sidebar-search-wrap">
+      <span style="color:var(--muted)">🔎</span>
+      <input type="text" id="sidebar-search" placeholder="بحث عن محادثة..."/>
+    </div>
+
+    <!-- Nav tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="all">الكل</button>
+      <button class="nav-tab" data-tab="direct">مباشر</button>
+      <button class="nav-tab" data-tab="groups">مجموعات</button>
+    </div>
+
+    <!-- Conversations list -->
+    <div class="conversations-list" id="conversations-list">
+      <div style="padding:20px;text-align:center;color:var(--muted)">
+        <span class="spinner"></span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="sidebar-actions">
+      <button class="sidebar-action-btn" id="btn-new-chat" style="position:relative">
+        ✉️ <span>محادثة</span>
+        <span id="total-unread" class="count"
+              style="position:absolute;top:-6px;left:-6px;display:none;font-size:.65rem;padding:2px 5px">0</span>
+      </button>
+      <button class="sidebar-action-btn" id="btn-create-group">
+        👥 <span>مجموعة</span>
+      </button>
+      <button class="sidebar-action-btn" id="btn-notifications" style="position:relative">
+        🔔
+        <span id="notif-badge" class="count"
+              style="position:absolute;top:-6px;left:-6px;display:none;font-size:.65rem;padding:2px 5px">0</span>
+      </button>
+      <button class="sidebar-action-btn" id="btn-signout" title="تسجيل الخروج">🚪</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN AREA ── -->
+  <main class="main-area glass">
+    <!-- Empty State -->
+    <div id="empty-state" style="display:flex">
+      <div class="empty-icon">💬</div>
+      <h2>أهلاً في EpicTalk</h2>
+      <p>اختر محادثة من القائمة أو ابدأ محادثة جديدة مع أصدقائك</p>
+      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;justify-content:center">
+        <button onclick="UI.openModal('modal-new-chat')"
+                style="padding:11px 20px;border-radius:14px;border:none;cursor:pointer;
+                       background:linear-gradient(135deg,var(--primary),var(--secondary));
+                       color:#fff;font-weight:700;font-size:.93rem">
+          ابدأ محادثة +
+        </button>
+        <button onclick="UI.openModal('modal-create-group')"
+                style="padding:11px 20px;border-radius:14px;
+                       background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+                       color:var(--text);font-weight:600;font-size:.93rem;cursor:pointer">
+          إنشاء مجموعة 👥
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat View -->
+    <div id="chat-view">
+      <!-- Chat Header -->
+      <div class="chat-header glass">
+        <div id="chat-header-content">
+          <div style="color:var(--muted)">اختر محادثة</div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages-container">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">
+          اختر محادثة للبدء
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="typing-indicator" id="typing-indicator">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <span id="typing-text">يكتب...</span>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="input-bar glass">
+        <button class="icon-btn" id="btn-emoji" title="إيموجي">😊</button>
+        <button class="icon-btn" id="btn-attach" title="إرفاق ملف">📎</button>
+        <input type="file" id="file-input" style="display:none"
+               accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar"/>
+        <input type="text" id="msg-input" placeholder="اكتب رسالة... (Enter للإرسال)" autocomplete="off"/>
+        <button id="btn-send">إرسال ✈️</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── RIGHT PANEL ── -->
+  <aside id="right-panel" class="glass visible">
+    <div style="padding:40px 20px;text-align:center;color:var(--muted)">
+      <div style="font-size:3rem;margin-bottom:12px">ℹ️</div>
+      <div>اختر محادثة لعرض التفاصيل</div>
+    </div>
+  </aside>
+
+</div><!-- end .app-layout -->
+
+
+<!-- ══════════════════════════════════
+     VIDEO CALL OVERLAY
+══════════════════════════════════ -->
+<div id="video-overlay">
+  <div id="call-info-bar">
+    <div>
+      <div id="call-status-text" style="color:var(--muted);font-size:.88rem">جاري الاتصال...</div>
+      <div id="call-timer" style="font-size:1.1rem;font-weight:700;color:var(--success)">0:00</div>
+    </div>
+    <div style="font-weight:700">EpicTalk Call</div>
+    <div style="opacity:0">.</div>
+  </div>
+
+  <div id="video-main">
+    <video id="remote-video" autoplay playsinline></video>
+    <video id="local-video" autoplay playsinline muted></video>
+    <div id="calling-indicator">
+      <div class="calling-pulse">📞</div>
+      <div style="font-size:1.1rem;font-weight:600">جاري الاتصال...</div>
+      <div style="color:var(--muted);font-size:.88rem">في انتظار الرد</div>
+    </div>
+  </div>
+
+  <div id="call-controls">
+    <button class="call-ctrl call-ctrl-default" id="btn-mute"
+            onclick="Video.toggleMute()" title="كتم الصوت">🎙</button>
+    <button class="call-ctrl call-ctrl-default" id="btn-camera"
+            onclick="Video.toggleCamera()" title="الكاميرا">📹</button>
+    <button class="call-ctrl call-ctrl-default" id="btn-screen"
+            onclick="Video.toggleScreen()" title="مشاركة الشاشة">🖥</button>
+    <button class="call-ctrl call-ctrl-end" id="btn-end-call"
+            onclick="Video.endCall()" title="إنهاء المكالمة">📵</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     MODALS
+══════════════════════════════════ -->
+
+<!-- New Chat -->
+<div class="modal" id="modal-new-chat">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>💬 محادثة جديدة</h2>
+      <button class="modal-close" data-close-modal="modal-new-chat">✕</button>
+    </div>
+    <div class="form-group">
+      <label>ابحث عن مستخدم</label>
+      <input type="text" id="user-search-input" placeholder="اكتب اسم أو @username..."/>
+    </div>
+    <div id="user-search-results" style="max-height:280px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- Create Group -->
+<div class="modal" id="modal-create-group">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>👥 إنشاء مجموعة</h2>
+      <button class="modal-close" data-close-modal="modal-create-group">✕</button>
+    </div>
+    <form id="form-create-group">
+      <div class="form-group">
+        <label>اسم المجموعة *</label>
+        <input type="text" id="group-name" placeholder="مثال: الفريق الإبداعي" required/>
+      </div>
+      <div class="form-group">
+        <label>وصف المجموعة</label>
+        <textarea id="group-desc" placeholder="اكتب وصفاً للمجموعة..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>إضافة أعضاء (ابحث عن مستخدمين)</label>
+        <input type="text" id="group-member-search" placeholder="ابحث عن عضو..."/>
+        <div id="group-member-results" style="max-height:160px;overflow-y:auto;margin-top:8px"></div>
+        <div id="selected-members" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px">
+        <button type="button" onclick="UI.closeModal('modal-create-group')"
+                style="padding:10px 16px;border-radius:11px;background:rgba(255,255,255,.07);
+                       border:1px solid rgba(255,255,255,.1);color:var(--text);cursor:pointer">
+          إلغاء
+        </button>
+        <button type="submit" class="btn-primary-sm" id="btn-submit-group">إنشاء المجموعة</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Notifications -->
+<div class="modal" id="modal-notifications">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h2>🔔 الإشعارات</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="App.markAllNotificationsRead()"
+                id="btn-mark-all-read"
+                style="font-size:.8rem;padding:6px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.1);
+                       background:rgba(255,255,255,.06);color:var(--muted);cursor:pointer">
+          قراءة الكل
+        </button>
+        <button class="modal-close" data-close-modal="modal-notifications">✕</button>
+      </div>
+    </div>
+    <div id="notif-list" style="max-height:420px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- Settings / Profile -->
+<div class="modal" id="modal-settings">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>⚙️ إعدادات الملف الشخصي</h2>
+      <button class="modal-close" data-close-modal="modal-settings">✕</button>
+    </div>
+    <!-- Avatar -->
+    <div style="text-align:center;margin-bottom:20px">
+      <div id="settings-avatar-wrap" style="display:inline-block;position:relative;cursor:pointer"
+           onclick="document.getElementById('avatar-file-input').click()">
+        <button id="avatar-upload-btn" style="display:none"></button>
+        <div id="settings-avatar" style="width:80px;height:80px;border-radius:20px;
+             background:linear-gradient(135deg,var(--primary),var(--accent));
+             display:grid;place-items:center;font-size:2rem;font-weight:800;margin:0 auto">
+          ؟
+        </div>
+        <div style="position:absolute;bottom:-4px;left:-4px;width:26px;height:26px;border-radius:50%;
+                    background:var(--primary);display:grid;place-items:center;font-size:.75rem;
+                    border:2px solid var(--bg2)">✏️</div>
+      </div>
+      <input type="file" id="avatar-file-input" style="display:none" accept="image/*"/>
+      <div style="margin-top:10px;color:var(--muted);font-size:.8rem">اضغط لتغيير الصورة</div>
+    </div>
+    <form id="form-settings">
+      <div class="form-group">
+        <label>الاسم الكامل</label>
+        <input type="text" id="settings-name" placeholder="الاسم الكامل"/>
+      </div>
+      <div class="form-group">
+        <label>اسم المستخدم</label>
+        <input type="text" id="settings-username" placeholder="@username"/>
+      </div>
+      <div class="form-group">
+        <label>نبذة شخصية</label>
+        <textarea id="settings-bio" placeholder="اكتب نبذة عنك..." rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label>حالة الاتصال</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" data-status="online" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(48,210,140,.3);background:rgba(48,210,140,.1);color:var(--success);cursor:pointer;font-size:.85rem">● متصل</button>
+          <button type="button" data-status="away" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,202,92,.3);background:rgba(255,202,92,.1);color:var(--warning);cursor:pointer;font-size:.85rem">● بعيد</button>
+          <button type="button" data-status="busy" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,92,112,.3);background:rgba(255,92,112,.1);color:var(--danger);cursor:pointer;font-size:.85rem">● مشغول</button>
+          <button type="button" data-status="offline" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--muted);cursor:pointer;font-size:.85rem">● غير متصل</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
+        <button type="button" onclick="Auth.signOut()"
+                style="padding:10px 14px;border-radius:11px;background:rgba(255,92,112,.1);
+                       border:1px solid rgba(255,92,112,.25);color:var(--danger);cursor:pointer;font-size:.88rem">
+          🚪 تسجيل الخروج
+        </button>
+        <button type="submit" class="btn-primary-sm" id="btn-save-settings">حفظ التغييرات</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Incoming Call -->
+<div class="modal" id="modal-incoming-call">
+  <div class="modal-box">
+    <div id="caller-avatar"></div>
+    <div id="caller-name">شخص ما</div>
+    <div id="call-type-label">📹 مكالمة فيديو واردة</div>
+    <div class="call-answer-btns">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <button class="btn-decline" id="btn-decline-call">📵</button>
+        <span style="font-size:.8rem;color:var(--muted)">رفض</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <button class="btn-accept" id="btn-accept-call">📞</button>
+        <span style="font-size:.8rem;color:var(--muted)">قبول</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════ -->
+<div id="toast-container"></div>
+
+
+<!-- ══════════════════════════════════
+     SCRIPTS
+══════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="video.js"></script>
+<script src="app.js"></script>
+
+<script>
+// ── Extra: group member search in create-group modal ──────
+(function() {
+  let selectedMemberIds = [];
+  let gmTimeout;
+
+  document.getElementById('group-member-search')?.addEventListener('input', async function() {
+    clearTimeout(gmTimeout);
+    gmTimeout = setTimeout(async () => {
+      const query = this.value.trim();
+      if (!query || query.length < 2) {
+        document.getElementById('group-member-results').innerHTML = '';
+        return;
+      }
+      const users = await App.searchUsers(query);
+      const resultsEl = document.getElementById('group-member-results');
+      resultsEl.innerHTML = users
+        .filter(u => !selectedMemberIds.includes(u.id))
+        .map(u => `
+          <div class="search-result-item" onclick="addGroupMember('${u.id}','${(u.full_name||u.username).replace(/'/g,'')}')"  style="cursor:pointer">
+            ${UI.avatarHtml(u, 36)}
+            <div>
+              <div style="font-weight:600;font-size:.9rem">${UI.escapeHtml(u.full_name||u.username)}</div>
+              <div style="font-size:.78rem;color:var(--muted)">@${UI.escapeHtml(u.username)}</div>
+            </div>
+          </div>`).join('');
+    }, 350);
+  });
+
+  window.addGroupMember = function(id, name) {
+    if (selectedMemberIds.includes(id)) return;
+    selectedMemberIds.push(id);
+
+    // Add hidden checkbox
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'group-member-check';
+    cb.value = id; cb.checked = true; cb.style.display = 'none';
+    document.getElementById('selected-members').appendChild(cb);
+
+    // Add tag
+    const tag = document.createElement('div');
+    tag.style.cssText = 'padding:5px 10px;border-radius:999px;background:rgba(124,92,255,.2);border:1px solid rgba(124,92,255,.3);font-size:.8rem;display:flex;align-items:center;gap:6px';
+    tag.innerHTML = `${UI.escapeHtml(name)} <span style="cursor:pointer;color:var(--muted)" onclick="removeGroupMember('${id}',this)">✕</span>`;
+    document.getElementById('selected-members').appendChild(tag);
+
+    document.getElementById('group-member-search').value = '';
+    document.getElementById('group-member-results').innerHTML = '';
+  };
+
+  window.removeGroupMember = function(id, el) {
+    selectedMemberIds = selectedMemberIds.filter(x => x !== id);
+    el.closest('div[style]').remove();
+    document.querySelector(`.group-member-check[value="${id}"]`)?.remove();
+  };
+})();
+</script>
+
+</body>
+</html>
